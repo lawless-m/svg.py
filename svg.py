@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+from __future__ import annotations
+from typing import IO
+
 import math
 
 class Point:
@@ -11,23 +14,23 @@ class Point:
         self.x = fx(self.x)
         self.y = fy(self.y)
 
-    def translate(self, tp):
+    def translate(self, tp:Point):
         self.x += tp.x
         self.y += tp.y
 
-    def shrink(self, p):
+    def shrink(self, p:Point):
         if p.x < self.x:
             self.x = p.x
         if p.y < self.y:
             self.y = p.y
         
-    def expand(self, p):
+    def expand(self, p:Point):
         if p.x > self.x:
             self.x = p.x
         if p.y > self.y:
             self.y = p.y
 
-    def dist(self, p):
+    def dist(self, p:Point):
         return math.sqrt((p.x - self.x)**2 + (p.y - self.y)**2)
     
 
@@ -41,7 +44,7 @@ class Style:
     def set(self, k, v):
         self.attribs[k] = v
 
-    def write(self, io, units=""):
+    def write(self, io:IO, units=""):
         io.write(' style="')
         for k in self.attribs:
             io.write(f"{k}:{self.attribs[k]}")
@@ -55,7 +58,7 @@ class Shape:
     pass
 
 class Circle(Shape):
-    def __init__(self, center, radius, style=Style()):
+    def __init__(self, center:Point, radius, style=Style()):
         self.center = center
         self.radius = radius
         self.style = style
@@ -63,19 +66,19 @@ class Circle(Shape):
     def scale(self, fx, fy):
         self.center.scale(fx, fy)
 
-    def translate(self, tp):
+    def translate(self, tp:Point):
         self.center.translate(tp)
 
     def bounds(self):
         offset = self.radius + self.style.attribs['stroke-width'] / 2
         return Point(self.center.x - offset, self.center.y - offset), Point(self.center.x + offset, self.center.y + offset)
     
-    def write(self, io, digits=2, units=""):
+    def write(self, io:IO, digits=2, units=""):
         io.write(f'<circle cx="{self.center.x:.{digits}f}{units}" cy="{self.center.y:.{digits}f}{units}" r="{self.radius:.{digits}f}{units}"')
         self.style.write(io, units=units)
         io.write(" />\n")
 
-    def distance_to_boundary(self, p):
+    def distance_to_boundary(self, p:Point):
         d = math.sqrt((p.x - self.center.x)**2 + (p.y - self.center.y)**2)
         return d - self.radius if d > self.radius else -(self.radius - d)
     
@@ -87,7 +90,7 @@ class Polyline(Shape):
         self.points = points
         self.style = style
 
-    def write(self, io, digits=2, units=""):    
+    def write(self, io:IO, digits=2, units=""):    
         io.write(f'<polyline points="')
         for p in self.points:
             io.write(f'{p.x:.{digits}f}{units},{p.y:.{digits}f}{units} ')
@@ -95,34 +98,34 @@ class Polyline(Shape):
         self.style.write(io, units=units)
         io.write(" />\n")
 
-    def translate(self, tp):
+    def translate(self, tp:Point):
         for p in self.points:
             p.translate(tp)
 
 class Line(Shape):
-    def __init__(self, startpoint, endpoint, style=Style()):
+    def __init__(self, startpoint:Point, endpoint:Point, style=Style()):
         self.startpoint = startpoint
         self.endpoint = endpoint
         self.style = style
 
-    def write(self, io, digits=2, units=""):    
+    def write(self, io:IO, digits=2, units=""):    
         io.write(f'<line x1="{self.startpoint.x:.{digits}f}{units}" y1="{self.startpoint.y:.{digits}f}{units}" x2="{self.endpoint.x:.{digits}f}{units}" y2="{self.endpoint.y:.{digits}f}{units}"')
         self.style.write(io, units=units)
         io.write(" />\n")
 
-    def translate(self, tp):
+    def translate(self, tp:Point):
         self.startpoint.translate(tp)
         self.endpoint.translate(tp)
 
 class Rect(Shape):
-    def __init__(self, pt, size, rx=0, ry=0, style=Style()):
+    def __init__(self, pt:Point, size:Point, rx=0, ry=0, style=Style()):
         self.origin = pt
         self.size = size
         self.rx = rx
         self.ry = ry
         self.style = style
 
-    def translate(self, p):
+    def translate(self, p:Point):
         self.origin.translate(p)
 
     def bounds(self):
@@ -133,12 +136,12 @@ class Rect(Shape):
         self.origin.scale(fx, fy)
         self.size.scale(fx, fy)
         
-    def write(self, io, digits=2, units=""):
+    def write(self, io:IO, digits=2, units=""):
         io.write(f'<rect x="{self.origin.x:.{digits}f}{units}" y="{self.origin.y:.{digits}f}{units}" width="{self.size.x:.{digits}f}{units}" height="{self.size.y:.{digits}f}{units}" rx="{self.rx:.{digits}f}{units}" ry="{self.ry:.{digits}f}{units}"')
         self.style.write(io, units=units)
         io.write(" />\n")
 
-    def distance_to_boundary(self, p):      
+    def distance_to_boundary(self, p:Point):
         # Check if the point is inside the rectangle
         inside_x = self.origin.x <= p.x <= self.origin.x + self.size.x
         inside_y = self.origin.y <= p.y <= self.origin.y + self.size.y
@@ -167,10 +170,10 @@ class SVG:
     def __init__(self):
         self.shapes = []
 
-    def append(self, shape):
+    def append(self, shape:Shape):
         self.shapes.append(shape)
 
-    def merge(self, svg):
+    def merge(self, svg:SVG):
         for s in svg.shapes:
             self.shapes.append(s)
 		
@@ -201,7 +204,7 @@ class SVG:
         bmin, bmax = self.bounds()
         return f"{bmin.x:.{digits}f}{units} {bmin.y:.{digits}f}{units} {(bmax.x-bmin.x):.{digits}f}{units} {(bmax.y-bmin.y):.{digits}f}{units}"
 	
-    def write(self, io, width, height, viewbox="", stylesheet="", units=""):
+    def write(self, io:IO, width, height, viewbox="", stylesheet="", units=""):
         if viewbox != "" :
             viewbox = f' viewBox="{viewbox}"'
         io.write(f'<svg width="{width}{units}" height="{height}{units}"{viewbox} xmlns="http://www.w3.org/2000/svg">\n')
@@ -213,20 +216,20 @@ class SVG:
 
         io.write("</svg>")
 
-    def write_html(self, io, width, height, viewbox="", stylesheet="", units=""):
+    def write_html(self, io:IO, width, height, viewbox="", stylesheet="", units=""):
         open_html(io)
         self.write(io, width, height, viewbox, stylesheet, units)
         close_html(io)
 
-    def translate(self, p):
+    def translate(self, p:Point):
         for s in self.shapes:
             s.translate(p)
 
 
-def open_html(io):
+def open_html(io:IO):
     io.write("<!DOCTYPE html>\n<html>\n<body>\n<div>\n")
 
-def close_html(io):
+def close_html(io:IO):
     io.write("</div>\n</body>\n</html>\n")
 
 if __name__ == "__main__":
