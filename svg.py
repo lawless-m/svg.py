@@ -11,9 +11,9 @@ class Point:
         self.x = fx(self.x)
         self.y = fy(self.y)
 
-    def translate(self, p):
-        self.x += p.x
-        self.y += p.y
+    def translate(self, tp):
+        self.x += tp.x
+        self.y += tp.y
 
     def shrink(self, p):
         if p.x < self.x:
@@ -63,8 +63,8 @@ class Circle(Shape):
     def scale(self, fx, fy):
         self.center.scale(fx, fy)
 
-    def translate(self, p):
-        self.center.translate(p)
+    def translate(self, tp):
+        self.center.translate(tp)
 
     def bounds(self):
         offset = self.radius + self.style.attribs['stroke-width'] / 2
@@ -81,7 +81,38 @@ class Circle(Shape):
     
     def print(self, end="\n"):
         print(f"Circle({self.center.x}, {self.center.y}, {self.radius})", end=end)
-        
+
+class Polyline(Shape):
+    def __init__(self, points, style=Style()):
+        self.points = points
+        self.style = style
+
+    def write(self, io, digits=2, units=""):    
+        io.write(f'<polyline points="')
+        for p in self.points:
+            io.write(f'{p.x:.{digits}f}{units},{p.y:.{digits}f}{units} ')
+        io.write('"')
+        self.style.write(io, units=units)
+        io.write(" />\n")
+
+    def translate(self, tp):
+        for p in self.points:
+            p.translate(tp)
+
+class Line(Shape):
+    def __init__(self, startpoint, endpoint, style=Style()):
+        self.startpoint = startpoint
+        self.endpoint = endpoint
+        self.style = style
+
+    def write(self, io, digits=2, units=""):    
+        io.write(f'<line x1="{self.startpoint.x:.{digits}f}{units}" y1="{self.startpoint.y:.{digits}f}{units}" x2="{self.endpoint.x:.{digits}f}{units}" y2="{self.endpoint.y:.{digits}f}{units}"')
+        self.style.write(io, units=units)
+        io.write(" />\n")
+
+    def translate(self, tp):
+        self.startpoint.translate(tp)
+        self.endpoint.translate(tp)
 
 class Rect(Shape):
     def __init__(self, pt, size, rx=0, ry=0, style=Style()):
