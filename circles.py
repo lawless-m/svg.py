@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python
 
 import random
 from svg import *
@@ -25,6 +25,8 @@ def add_circles(svg, pmin, pmax, n, r, space=5, tries=10000):
             p = rpoint(pmin, pmax)
             c = Circle(p, r)
             if check_against_svg(svg, c, space):
+                svg.append(Line(Point(c.center.x-1, c.center.y), Point(c.center.x+1, c.center.y)))
+                svg.append(Line(Point(c.center.x, c.center.y-1), Point(c.center.x, c.center.y+1)))
                 svg.append(c)
                 t = tries
             else:
@@ -42,8 +44,9 @@ def create_tab(position, height, width):
     svg.translate(position)
     return svg
 
+
 def write_page(svg, page):
-    with open(f"/home/matt/circles/circles_{page}.svg", "w+") as io:
+    with open(f"circles_{page}.svg", "w+") as io:
         svg.write(io, 210, 297, "0mm 0mm 210mm 297mm", units="mm")
 
 def create_tabs():
@@ -55,7 +58,7 @@ def create_tabs():
     page = 0
     pagew = 210
     nextorigin = pagew
-    for height in [235, 290, 275, 260, 285, 240, 271, 231]: # [270, 280, 250, 235, 290, 275, 260, 285, 240, 271, 231]
+    for height in [210, 250, 260, 220, 155, 235, 260, 260, 220, 260,235,80]:
         svg.merge(create_tab(Point(x,3), height, tabw))
         if x + spacing + tabw >= nextorigin :
             page += 1
@@ -72,4 +75,40 @@ print(c.distance_to_boundary(0,5))
 print(c.distance_to_boundary(0,15))
 """
 
-create_tabs()
+
+def exspace(x):
+    pmin = Point(5, 3)
+    pmax = Point(40,12)
+  
+    m = (pmax.y - pmin.y) / (pmax.x - pmin.x) 
+    c = pmin.y - m * pmin.x
+    return x * m + c
+
+
+def ender():
+	svg = SVG()
+	svg.append(Rect(Point(0,0), Point(100,40)))
+	cnt = 0
+	while cnt < 35:
+		p = rpoint(Point(3,5), Point(95, 37))
+		c = Circle(p, 1, Style(stroke_width=0.5))
+		if check_against_svg(svg, c, exspace(c.center.y)):
+			svg.append(c)
+			cnt += 1
+			print(cnt)
+	return svg
+
+def double_ender():
+    svg = SVG()
+    e = ender()
+    e.translate(Point(0, 50))
+    svg.merge(e)
+    e = ender()
+    svg.merge(e)
+
+    write_page(svg, 'ender')
+
+double_ender()
+
+#create_tabs()
+
