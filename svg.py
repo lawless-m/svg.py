@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import IO
 
 import math
+import copy
 
 class Point:
     def __init__(self, x, y):
@@ -30,9 +31,64 @@ class Point:
         if p.y > self.y:
             self.y = p.y
 
+    def magnitude(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2)
+
+    def angle(self):
+        if self.x == 0 and self.y == 0:
+            return 0.0
+        else:
+            return math.atan2(self.y, self.x)
+
     def dist(self, p:Point):
         return math.sqrt((p.x - self.x)**2 + (p.y - self.y)**2)
     
+
+    def __add__(self, other):
+        if not isinstance(other, Vertex2D):
+            raise TypeError("Can only add Vertex2D objects")
+        return Vertex2D(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        if not isinstance(other, Vertex2D):
+            raise TypeError("Can only subtract Vertex2D objects")
+        return Vertex2D(self.x - other.x, self.y - other.y)
+
+    def copy(self):
+        """
+        Creates a deep copy of the point.
+        
+        Returns:
+            Point: A new Point object with the same x and y coordinates as the original.
+        """
+        return copy.deepcopy(self)
+
+    def rotate(self, angle_radians):
+        """
+        Rotates the Vertex2D around the origin by the given angle in radians.
+        """
+        cos_angle = math.cos(angle_radians)
+        sin_angle = math.sin(angle_radians)
+        new_x = self.x * cos_angle - self.y * sin_angle
+        new_y = self.x * sin_angle + self.y * cos_angle
+        self.x = new_x
+        self.y = new_y
+        return self
+
+
+    def move(self, distance, angle_degrees):
+        """
+        Moves the point to a new position based on the provided distance and angle (in degrees).
+        
+        Args:
+            distance (float): The distance to move the point.
+            angle_degrees (float): The angle in degrees to move the point.
+        """
+        angle_radians = math.radians(angle_degrees)
+        self.x += distance * math.cos(angle_radians)
+        self.y += distance * math.sin(angle_radians)
+        return self
+
 
 class Style:
     def __init__(self, fill="none", stroke="black", stroke_width=1):
@@ -102,6 +158,15 @@ class Polyline(Shape):
         for p in self.points:
             p.translate(tp)
 
+    def bounds(self):
+        pmin = Point(float('inf'), float('inf'))
+        pmax = Point(-float('inf'), -float('inf'))
+        for p in self.points:
+            pmin.shrink(p)
+            pmax.expand(p)
+        return pmin, pmax
+
+
 class Line(Shape):
     def __init__(self, startpoint:Point, endpoint:Point, style=Style()):
         self.startpoint = startpoint
@@ -162,9 +227,6 @@ class Rect(Shape):
             dy = max(self.origin.y - p.y, 0, p.y - (self.origin.y + self.size.y))
             return (dx**2 + dy**2)**0.5
 
-class Polyline(Shape):
-    def __init__(self):
-        pass
 
 class SVG:
     def __init__(self):
